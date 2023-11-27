@@ -9,6 +9,544 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Heading
+# Chapter 2: Habitat 
 
-## Subheading
+## Research quesetion 1:
+### Is there a difference in Redtail Parrotfish Density Between Habitat Types
+
+Kruskall-Wallis Test
+```{r}
+abundance_df$totalabun <- rowSums( abundance_df[,2:9] )
+density_df <- abundance_df %>%
+  mutate(density = (totalabun*2)) %>%
+  mutate(MajorHabitat = ifelse(MajorHabitat == "Seagrass", "Seagrass Fringe", MajorHabitat))
+
+kruskal.test(density ~ MajorHabitat, data = density_df)
+dunn.test(density_df$density, g = density_df$MajorHabitat, method = "bonferroni")
+pairwise <- pairwise.wilcox.test(density_df$density, density_df$MajorHabitat,
+                     p.adjust.method = "BH")
+pairwise
+
+fig1 <- ggplot(density_df, aes(x = MajorHabitat, y = density)) +
+  geom_boxplot(outlier.colour = "grey", outlier.shape = 16, outlier.size = 1) +
+  geom_jitter(width = 0.3, size = 1, alpha = 0.2) +
+  labs(y=bquote("Density (N per 100 m"^"2"*")")) +
+  xlab("Habitat Type") +
+  theme(axis.text.x=element_text(size=9))
+fig1
+```
+
+
+Chi-Square Test
+```{r}
+#0-3
+habitat <- c("Hardbottom", "Rocky Reef", "Seagrass")
+size_class <- c("0-3")
+count <- c(74, 70, 54)
+contingency_table <- matrix(count, nrow = length(habitat), ncol = length(size_class))
+rownames(contingency_table) <- habitat
+colnames(contingency_table) <- size_class
+print(contingency_table)
+size0_3 <- chisq.test(contingency_table)
+size0_3
+#Not significant: 0.183
+
+#4-5
+habitat <- c("Hardbottom", "Rocky Reef", "Seagrass")
+size_class <- c("4-5")
+count <- c(275, 187 , 118)
+contingency_table <- matrix(count, nrow = length(habitat), ncol = length(size_class))
+rownames(contingency_table) <- habitat
+colnames(contingency_table) <- size_class
+size4_5 <- chisq.test(contingency_table)
+size4_5
+#Significant: < 0.001
+
+#6-10
+habitat <- c("Hardbottom", "Rocky Reef", "Seagrass")
+size_class <- c("4-5")
+count <- c(303, 245, 125)
+contingency_table <- matrix(count, nrow = length(habitat), ncol = length(size_class))
+rownames(contingency_table) <- habitat
+colnames(contingency_table) <- size_class
+size6_10 <- chisq.test(contingency_table)
+size6_10
+#Significant: < 0.001
+
+#11-15
+habitat <- c("Hardbottom", "Rocky Reef", "Seagrass")
+size_class <- c("11-15")
+count <- c(88, 86, 23)
+contingency_table <- matrix(count, nrow = length(habitat), ncol = length(size_class))
+rownames(contingency_table) <- habitat
+colnames(contingency_table) <- size_class
+size11_15 <- chisq.test(contingency_table)
+size11_15
+#Significant: < 0.001
+
+#16-20
+habitat <- c("Hardbottom", "Rocky Reef", "Seagrass")
+size_class <- c("16-20")
+count <- c(28, 47, 17)
+contingency_table <- matrix(count, nrow = length(habitat), ncol = length(size_class))
+rownames(contingency_table) <- habitat
+colnames(contingency_table) <- size_class
+size16_20 <- chisq.test(contingency_table)
+size16_20
+#Signficiant: < 0.001
+
+#21-30
+habitat <- c("Hardbottom", "Rocky Reef", "Seagrass")
+size_class <- c("16-20")
+count <- c(7, 12, 2)
+contingency_table <- matrix(count, nrow = length(habitat), ncol = length(size_class))
+rownames(contingency_table) <- habitat
+colnames(contingency_table) <- size_class
+size21_30<- chisq.test(contingency_table)
+size21_30
+#Significant: < 0.001
+```
+
+###Preliminary Roving Fish Survey Graph
+```{r}
+#Prelim Analysis
+melt_prelim <- melt(prelim_overall, id = c("Habitat"))
+
+prelim_fig <- ggplot(melt_prelim, aes(x=Habitat, y= value, fill = variable))  +
+  geom_col(position = position_dodge(),
+           width = (0.75)) +
+  labs(y=bquote("Abundance"),
+       fill = "Size Class (cm)") +
+  xlab("Habitat Type")
+prelim_fig
+prelim_fig <- ggplot(melt_prelim, aes(x=Habitat, y= value, fill = variable))  +
+  geom_col(position = position_dodge(),
+           width = (0.75)) +
+  labs(y=bquote("Abundance"),
+       fill = "Size Class (cm)") +
+  xlab("Habitat Type") +
+  scale_fill_brewer(palette = "Dark2")
+prelim_fig
+```
+
+
+#Research Question 2: 
+### How does benthic substrate percent cover affect the density of Redtail Parrotfish? 
+Negative Binomial Regression
+```{r}
+
+poisson_benthic <- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = "poisson", data = glm_df)
+summary(poisson_benthic)
+dispersiontest(poisson_benthic)
+library(DHARMa)
+resp <- simulateResiduals(modelpois, refit = T)
+testDispersion(resp, plot = F)
+plot(resp)
+#Plot shows significant dispersion (3.43, p= <0.001)
+
+m_benthic <- glm.nb(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE , data = glm_df)
+summary(m_benthic)
+m2_benthic <- update(m_benthic, . ~ . - Dictyota)
+anova(m_benthic, m2_benthic)
+pchisq(2 * (logLik(m1) - logLik(m3)), df = 1, lower.tail = FALSE)
+qchisq(p=5.866e-69, df=8, lower.tail=FALSE)
+#Chi-square 341.5115 which means NBR model is better
+
+library(pscl)
+odTest(m_benthic)
+#Chi-square Test Statistic = 308.092, p < 0.0001
+library(AER)
+dispersiontest(poisson_benthic)
+#Dispersion 3.352
+
+#Reference website: https://www.uio.no/studier/emner/matnat/math/STK3100/h23/undervisningsmateriale/exercise_solutions/exercise_7.31.pdf
+#Another: https://bookdown.org/ks6017/GLM_bookdown3/chapter-4-poisson-regression-and-extensions.html#poisson-distribution
+
+
+plot_model(m_benthic, type = "pred", terms = "Dictyota", axis.title = "Density", title = "")
+
+#get confidence interval for complexity
+CI_ben <- ggpredict(m_benthic, interval = "confidence", type = "fixed",
+                 terms = "Dictyota")
+CI_ben <- CI_ben %>% as.data.frame()
+
+ggplot() +
+  geom_point(data = glm_df, aes(x = Dictyota,
+                               y = Abundance,
+                              ),
+             alpha = 0.2) +
+  geom_path(data = CI_ben, aes(x = x, y = predicted)) +
+  geom_ribbon(data = CI_ben, aes(x = x, ymin = conf.low,
+                                  ymax = conf.high),
+              alpha = 0.5)
+
+```
+
+### How does benthic substrate percent cover affect the density of Redtail Parrotfish within each habitat type? 
+Negative Binomial Regression
+```{r}
+#SEAGRASS FRINGE
+
+df_sg = glm_df %>%
+  filter(Habitat == "Seagrass")
+m_poisson_sg <- glm(Abundance ~  MacaUNSP + TURF + Dictyota + THALASSIA + SYRINGODIUM + HALOPHILA, family = "poisson", data = df_sg)
+m_sg <- glm.nb(Abundance ~  MacaUNSP + TURF + Dictyota + THALASSIA + SYRINGODIUM + HALOPHILA, data = df_sg)
+summary(m_sg)
+summary(m_poisson_sg)
+dispersiontest(m_poisson_sg)
+odTest(m_sg)
+
+#ROCKY REEF
+
+df_rr = glm_df %>%
+  filter(Habitat == "Rocky Reef")
+m_rr <- glm.nb(Abundance ~  MacaUNSP + Dictyota + TURF + CORAL + SPONGE, data = df_rr)
+m_poisson_rr <- glm(Abundance ~  MacaUNSP + Dictyota + TURF + CORAL + SPONGE, family = "poisson", data = df_rr)
+dispersiontest(m_poisson_rr)
+odTest(m_rr)
+summary(m_rr)
+
+#HARDBOTTOM
+df_hb = glm_df %>%
+  filter(Habitat == "Hardbottom")
+m_hb <- glm.nb(Abundance ~  MacaUNSP + Dictyota + TURF + CORAL + SPONGE, data = df_hb)
+m_poisson_hb <- glm(Abundance ~  MacaUNSP + Dictyota + TURF + CORAL + SPONGE, family = "poisson", data = df_hb)
+dispersiontest(m_poisson_hb)
+odTest(m_hb)
+summary(m_hb)
+
+
+```
+
+### How do complexity and depth affect the density of Redtail Parrotfish?
+```{r}
+noout <- subset(nbr_complexdepth,Complexity < 100)
+modelpois <- glm(Density ~ Complexity + AvgDepth, family = "poisson", data = noout)
+summary(modelpois)
+library(DHARMa)
+resp <- simulateResiduals(modelpois, refit = T)
+testDispersion(resp, plot = F)
+plot(resp)
+#SHOWS DISPERSION
+
+m_depthcomplex <- glm.nb(Density ~ Complexity + AvgDepth, data = noout)
+summary(m_depthcomplex)
+m2_depthcomplex <- update(m_depthcomplex, . ~ . - Complexity)
+anova(m_depthcomplex, m2_depthcomplex)
+poisson_depthcomplex <- glm(Density ~ Complexity + AvgDepth, family = "poisson", data = noout)
+install.packages("AER")
+library(AER)
+dispersiontest(poisson_depthcomplex)
+#Dispersion 3.441745 
+pchisq(2 * (logLik(m1) - logLik(m3)), df = 1, lower.tail = FALSE)
+qchisq(p=5.16e-84, df=4, lower.tail=FALSE)
+#Chi-square test 394.2 - ABOVE CRITICAL VALUE MEANS GOOD TEST
+qchisq(0.05, df=4, lower.tail=FALSE)
+
+library(pscl)
+odTest(m_depthcomplex)
+#Critical value of test statistic at the alpha= 0.05 level: 2.7055 
+#Chi-Square Test Statistic =  347.7721 p-value = < 2.2e-16 
+
+plot_model(m_depthcomplex, type = "pred", terms = "Complexity", axis.title = "Density Prediction", title = "")
+
+#get confidence interval for complexity
+CI_comp <- ggpredict(m_depthcomplex, interval = "confidence", type = "fixed",
+                 terms = "Complexity")
+CI_comp <- CI_comp %>% as.data.frame()
+
+ggplot() +
+  geom_point(data = noout, aes(x = Complexity,
+                               y = Density,
+                              ),
+             alpha = 0.2) +
+  geom_path(data = CI_comp, aes(x = x, y = predicted)) +
+  geom_ribbon(data = CI_comp, aes(x = x, ymin = conf.low,
+                                  ymax = conf.high),
+              alpha = 0.5)
+
+
+
+
+```
+
+### How do complexity and depth affect the density of Redtail Parrotfish within each size class?
+
+```{r}
+m1_poisson <- glm(size1 ~ Complexity, family = "poisson", data = noout)
+m1 <- glm.nb(size1 ~ Complexity , data = noout)
+s1 <- summary(m1)
+s1
+plot_model(m1, type = "pred", terms = "Complexity", axis.title = "Density Prediction", title = "", show.data = TRUE)
+predicted_values <- predict(m1, type = "response", se.fit = TRUE)
+data_with_predictions <- cbind(noout, predicted_values)
+
+#0-3 not significant
+odTest(m1)
+dispersiontest(m1_poisson)
+
+m2 <- glm.nb(size2 ~ Complexity , data = noout)
+m2_poisson <- glm(size2 ~ Complexity, family = "poisson", data = noout)
+s2 <- summary(m2)
+s2
+plot_model(m2, type = "pred", terms = "complexity", axis.title = "Density Prediction", title = "")
+#4-5 not significant
+odTest(m2)
+dispersiontest(m2_poisson)
+
+m3_poisson <- glm(size3 ~ Complexity, family = "poisson", data = noout)
+m3 <- glm.nb(size3 ~ Complexity , data = noout)
+s3 <- summary(m3)
+s3
+plot_model(m3, type = "pred", terms = "complexity", axis.title = "Density Prediction", title = "")
+#6-10 significant
+odTest(m3)
+dispersiontest(m3_poisson)
+
+
+m4_poisson <- glm(size4 ~ Complexity, family = "poisson", data = noout)
+m4 <- glm.nb(size4 ~ Complexity , data = noout)
+s4 <- summary(m4)
+s4
+plot_model(m4, type = "pred", terms = "complexity", axis.title = "Density Prediction", title = "")
+#11-15 significant
+odTest(m4)
+dispersiontest(m4_poisson)
+
+m_5poisson <- glm(size5 ~ Complexity, family = "poisson", data = noout)
+m5 <- glm.nb(size5 ~ Complexity , data = noout)
+s5 <- summary(m5)
+s5
+plot_model(m6, type = "pred", terms = "complexity", axis.title = "Density Prediction", title = "")
+#16-20 significant
+odTest(m5)
+dispersiontest(m5_poisson)
+
+m6_poisson <- glm(size6 ~ Complexity, family = "poisson", data = noout)
+summary(m6_poisson)
+m6 <- glm.nb(size6 ~ Complexity , data = noout)
+s6 <- summary(m6)
+s6
+plot_model(m6, type = "pred", terms = "complexity", axis.title = "Density Prediction", title = "")
+#21-30 significant but bad 
+odTest(m6)
+dispersiontest(m6_poisson)
+
+m7_poisson <- glm(size7 ~ Complexity, family = "poisson", data = noout)
+summary(m7_poisson)
+m7 <- glm.nb(size7 ~ Complexity , data = noout)
+s7 <- summary(m7)
+s7
+plot_model(m6, type = "pred", terms = "complexity", axis.title = "Density Prediction", title = "")
+#21-30 significant but bad 
+odTest(m7)
+dispersiontest(m7_poisson)
+
+```
+
+###Is there a difference in complexity between habitat types?
+```{r}
+complex_sum  <- ddply(nbr_complexdepth, ~MajorHabitat, summarise,
+                      mean = mean(Complexity), 
+                      sd = sd(Complexity), 
+                      n = length(Complexity), 
+                      SEM = sd(Complexity)/sqrt
+                      (length(Complexity)))
+
+kruskal.test(Complexity ~ MajorHabitat, data = nbr_complexdepth)
+#Kruskal-Wallis chi-squared = 129.35, df = 2, p-value <0.001 
+#Significant Different Between Complexity in the Major Habitat Types
+dunnTest(Complexity ~ MajorHabitat,
+        data=nbr_complexdepth,
+        method="bonferroni")
+
+pairwise.wilcox.test(nbr_complexdepth$Complexity, nbr_complexdepth$MajorHabitat, 
+                     p.adjust.method = "BH")
+
+sigs <- c("a", "b", "c")
+
+fig_complex <- ggplot(nbr_complexdepth, aes(x = MajorHabitat, y = Complexity)) +
+  geom_boxplot(outlier.colour = "grey", outlier.shape = 16, outlier.size = 1) +
+  geom_jitter(width = 0.3, size = 1, alpha = 0.2) +
+  labs(y=bquote("Topographic Complexity (cm)")) +
+  xlab("Habitat Type") +
+  theme(axis.text.x=element_text(size=9))
+fig_complex
+
+nbr_complexdepth$MajorHabitat[nbr_complexdepth$MajorHabitat == "Seagrass"] <- "Seagrass Fringe"
+```
+
+
+###Benthic Biological Substrate Proportion
+```{r}
+benthic <- benthicdf %>%
+  subset(select = c(Habitat, CORAL, SPONGE, TURF, Nonliving, SEAGRASS, allother, MacaUNSP, DICT)) %>%
+  rename("Coral" = "CORAL",
+         "Sponge" = "SPONGE", 
+         "Turf Algae" = "TURF", 
+         "Non-living" = "Nonliving",
+         "Other" = "allother",
+         "Macroalgae Unsp" = "MacaUNSP", 
+         "Seagrass" = "SEAGRASS",
+         "Dictyota" = "DICT") %>%
+  melt(id = ("Habitat")) %>%
+  na.omit()
+benthic$Habitat[benthic$Habitat == "Seagrass"] <- "Seagrass Fringe"
+
+
+benthic_graph <-  ggplot(benthic, aes(x=Habitat, y= value, fill = variable))  +
+  geom_col(position = "fill",
+           width = (0.75)) +
+  labs("Percent Cover", fill = "Biological Substrate") +
+  xlab("Habitat Type") +
+  ylab("Percent Cover") +
+  theme(axis.title.y = element_text(size = 10)) 
+
+benthic_graph
+
+level_order_var <- c("Seagrass", "Other", "Sponge", "Coral", "Macroalgae Unsp", "Dictyota","Turf Algae","Non-living")
+benthic$variable <- factor(benthic$variable, levels=level_order_var)
+```
+
+
+#Research Question 3: 
+###Are there trends in habitat shifts?
+
+```{r}
+#NCMRP DATASET
+stjstt = getRvcData(years = 2017:2021, regions = c("STTSTJ"))
+spcs = c("SPA CHRY")
+
+
+den = getStratumDensity(stjstt, species = spcs, strata = c("AGRFSHLW","PTRFSHLW", "PVMTSHLW", "SCRSHLW", "HARDSHLW", "BDRKSHLW"), length_bins = seq(5,30,5)) %>%
+  filter(length_class != "all")
+
+den1 = getStratumDensity(stjstt, species = spcs, strata = c("AGRFSHLW","PTRFSHLW", "PVMTSHLW", "SCRSHLW", "HARDSHLW", "BDRKSHLW"), length_bins = seq(1,6,5)) %>%
+  filter(length_class != "all")
+
+filter0_5 <- den1 %>% filter(length_class == "[1, 6)")
+
+
+den2 = getStratumDensity(stjstt, species = spcs, strata = c("AGRFSHLW","PTRFSHLW", "PVMTSHLW", "SCRSHLW", "HARDSHLW", "BDRKSHLW"), length_bins = seq(6,11,5)) %>%
+  filter(length_class != "all")
+
+filter6_10 <- den2 %>% filter(length_class == "[6, 11)")
+
+
+den3 = getStratumDensity(stjstt, species = spcs, strata = c("AGRFSHLW","PTRFSHLW", "PVMTSHLW", "SCRSHLW", "HARDSHLW", "BDRKSHLW"), length_bins = seq(11,40,10)) %>%
+  filter(length_class != "all")
+filter11_40 <- den3 %>% filter(length_class != "< 11")
+
+combined_df <- rbind(filter0_5, filter6_10, filter11_40)
+
+updated <- combined_df %>%
+  mutate(length_class = case_when(
+    length_class == "[1, 6)" ~ "0-5", 
+    length_class == "[6, 11)" ~ "6-10", 
+    length_class == "[11, 21)" ~ "11-20",
+    length_class == "[21, 31)" ~ "21-30",
+    length_class == ">= 31" ~ ">= 31")
+    )
+hab <- updated %>%
+  mutate(STRAT = case_when(
+    STRAT == "AGRFSHLW" ~ "Coral Reef",
+    STRAT == "PTRFSHLW" ~ "Coral Reef",
+    STRAT == "SCRSHLW" ~ "Rocky Reef",
+    STRAT == "BDRKSHLW" ~ "Rocky Reef",
+    STRAT == "HARDSHLW" ~ "Coral Reef",
+    STRAT == "PVMTSHLW" ~ "Hardbottom",
+    TRUE ~ STRAT  # Keep other values as is
+  ))
+
+hab_fig_fill <- ggplot(hab, aes(x = length_class, y = density, fill = STRAT)) +
+  geom_bar(position="fill", stat="identity", width = .75) +
+  scale_x_discrete(limits = level_orderNCRMP) +
+  labs(y=bquote("Density (N per 176 m"^"2"*")"),
+       fill = "Habitat") +
+  xlab("Size Class (cm)") +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_fill_manual(values = c("Hardbottom" = "#F8766D", "Rocky Reef" = "#00B0F6", "Coral Reef" = "purple")) +
+  theme(axis.title.y = element_text(size = 9)) 
+hab_fig_fill
+
+level_orderNCRMP <- c("0-5", "6-10", "11-20", "21-30", ">= 31") 
+
+hab$STRAT <- factor(hab$STRAT, levels = c("Hardbottom", "Rocky Reef", "Coral Reef"))
+
+
+
+#TCRMP DATASET
+tcrmp <- tcrmp %>%
+  filter(Habitat != "Seagrass") %>%
+  pivot_longer(cols = -Habitat, names_to = "size_class", values_to = "abundance")
+
+level_orderTCRMP <- c("0_5", "6_10","11-20", "21_30", "31-40") 
+tcrmp$Habitat<- factor(tcrmp$Habitat, levels = c("Hardbottom", "Rocky Reef", "Coral Reef"))
+
+tcrmp_fig <- ggplot(tcrmp, aes(x = size_class, y = abundance, fill = Habitat)) +
+  geom_bar(position="fill", stat="identity", width = .75) +
+  scale_x_discrete(limits = level_orderTCRMP) +
+  
+  labs(y=bquote("Proportion of Total Density (N per 100 m"^"2"*")"),
+       fill = "Habitat",
+       title = "TCRMP Data + My Survey Data") +
+  xlab("Size Class (cm)") +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_fill_manual(values = c("Hardbottom" = "#F8766D", "Rocky Reef" = "#00B0F6", "Coral Reef" = "purple")) +
+  theme(legend.position = "top", 
+        axis.title.y = element_text(size = 8)) 
+tcrmp_fig
+
+#PRELIMINARY DATASET
+pre_long <- preliminarydata
+
+level_order_prelim <- c("0-5", "6-10", "11-20", "21-30", "31-40") 
+pre_long$Habitat<- factor(pre_long$Habitat, levels = c("hardbottom", "rocky reef", "coral reef"))
+
+pre_fig <- ggplot(pre_long, aes(x = size_class, y = count, fill = Habitat)) +
+  geom_bar(position="fill", stat="identity", width = .75) +
+  scale_x_discrete(limits = level_order_prelim) +
+  labs(y=bquote("Proportion of Total Abundance"),
+       fill = "Habitat") +
+  xlab("Size Class (cm)") +
+  scale_y_continuous(expand = c(0,0)) +
+  scale_fill_manual(values = c("hardbottom" = "#F8766D", "rocky reef" = "#00B0F6", "coral reef" = "purple")) +
+  theme(legend.position = "none", 
+        axis.title.y = element_text(size = 9)) 
+pre_fig
+
+#COMBINED FIGURE
+combined <- tcrmp_fig / hab_fig_fill / pre_fig
+combined
+
+```
+
+### Research Question Extras
+Kruskal Wallis on Depth: ###Is there a difference in depth between habitat types?
+```{r}
+depth <- nbr_complexdepth 
+
+
+sum_depth<- ddply(depth, ~MajorHabitat, summarise, 
+                      mean = mean(DepthMeters),
+                       sd = sd(DepthMeters), 
+                       n = length(DepthMeters), 
+                       SEM = sd(DepthMeters)/sqrt(length(DepthMeters)))
+view(sum_depth)
+kruskal.test(DepthMeters ~ MajorHabitat, data = depth)
+dunnTest(DepthMeters ~ MajorHabitat, data = depth,
+         method="bonferroni")
+pairwise.wilcox.test(depth$DepthMeters, depth$MajorHabitat,
+                     p.adjust.method = "BH")
+
+
+depth_fig <- ggplot(depth, aes(x = MajorHabitat, y = DepthMeters)) +
+  geom_boxplot(outlier.colour = "grey", outlier.shape = 16, outlier.size = 1) +
+  geom_jitter(width = 0.3, size = 1, alpha = 0.2) +
+  labs(y=bquote("Depth (m)")) +
+  xlab("Habitat Type") +
+  theme(axis.text.x=element_text(size=9))
+depth_fig
+ 
+```
+
