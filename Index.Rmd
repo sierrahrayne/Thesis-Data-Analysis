@@ -21,13 +21,28 @@ library(readxl)
 ## Research Question 1
 ### Is there a difference in Redtail Parrotfish Density Between Habitat Types and Size Classes
 
-```{r, include=FALSE, echo = FALSE}
+```{r, echo = FALSE}
 
 abundance_dfnewimport <- read_excel("Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
-abundance_df <- abundance_dfnewimport
-abundance_df %>%
+abundance_df <- abundance_dfnewimport %>%
   mutate(totalabun = rowSums(.[2:9]))
+density_df <- abundance_df %>%
+  mutate(density = totalabun*2) %>%
+  mutate(MajorHabitat = ifelse(MajorHabitat == "Seagrass", "Seagrass Fringe", MajorHabitat))
+# density_df
+density_df
+kruskal.test(density ~ MajorHabitat, data = density_df)
+pairwise <- pairwise.wilcox.test(density_df$density, density_df$MajorHabitat,
+                     p.adjust.method = "BH")
+pairwise
 
+fig1 <- ggplot(density_df, aes(x = MajorHabitat, y = density)) +
+  geom_boxplot(outlier.colour = "grey", outlier.shape = 16, outlier.size = 1) +
+  geom_jitter(width = 0.3, size = 1, alpha = 0.2) +
+  labs(y=bquote("Density (N per 100 m"^"2"*")")) +
+  xlab("Habitat Type") +
+  theme(axis.text.x=element_text(size=9))
+fig1
 ```
 
 

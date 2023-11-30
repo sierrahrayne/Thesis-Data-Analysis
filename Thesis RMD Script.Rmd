@@ -20,14 +20,12 @@ Kruskall-Wallis Test
 library(tidyverse)
 library(readxl)
 abundance_dfnewimport <- read_excel("Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
-abundance_df <- abundance_dfnewimport
-abundance_df %>%
+abundance_df <- abundance_dfnewimport %>%
   mutate(totalabun = rowSums(.[2:9]))
-
 density_df <- abundance_df %>%
-  mutate(density = (totalabun*2)) %>%
+  mutate(density = totalabun*2) %>%
   mutate(MajorHabitat = ifelse(MajorHabitat == "Seagrass", "Seagrass Fringe", MajorHabitat))
-
+# density_df
 density_df
 kruskal.test(density ~ MajorHabitat, data = density_df)
 pairwise <- pairwise.wilcox.test(density_df$density, density_df$MajorHabitat,
@@ -135,7 +133,8 @@ prelim_fig
 ### How does benthic substrate percent cover affect the density of Redtail Parrotfish? 
 Negative Binomial Regression
 ```{r NBR: Substrate}
-
+library(readxl)
+glm_df <- read_excel("Data/glm_df.xlsx")
 poisson_benthic <- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = "poisson", data = glm_df)
 summary(poisson_benthic)
 dispersiontest(poisson_benthic)
