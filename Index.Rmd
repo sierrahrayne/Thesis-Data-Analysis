@@ -1,5 +1,5 @@
 ---
-title: "Final Project- Data Management"
+title: "index"
 author: "Sierrah Mueller"
 date: "2023-11-30"
 output: html_document
@@ -69,4 +69,3 @@ noout <- subset(nbr_complexdepth,Complexity < 100)
 
 
 ```
-
