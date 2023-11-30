@@ -23,7 +23,7 @@ library(readxl)
 
 ```{r, echo = FALSE}
 
-abundance_dfnewimport <- read_excel("Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
+abundance_dfnewimport <- read_excel("../Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
 abundance_df <- abundance_dfnewimport %>%
   mutate(totalabun = rowSums(.[2:9]))
 density_df <- abundance_df %>%
@@ -51,7 +51,7 @@ fig1
 ### How does benthic substrate percent cover affect the density of Redtail Parrotfish? 
 Negative Binomial Regression
 ```{r NBR: Substrate, echo= FALSE, message = FALSE}
-glm_df <- read_excel("Data/glm_df.xlsx")
+glm_df <- read_excel("../Data/glm_df.xlsx")
 
 poisson_benthic <- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = "poisson", data = glm_df)
 summary(poisson_benthic)
@@ -63,7 +63,7 @@ odTest(m_benthic)
 
 ### How do complexity and depth affect the density of Redtail Parrotfish?
 ```{r NBR, echo= FALSE, message = FALSE}
-nbr_complexdepth <- read_excel("Data/nbr_complexdepth.xlsx")
+nbr_complexdepth <- read_excel("../Data/nbr_complexdepth.xlsx")
 noout <- subset(nbr_complexdepth,Complexity < 100)
 
 
