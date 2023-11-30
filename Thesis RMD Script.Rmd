@@ -4,25 +4,32 @@ author: "Sierrah Mueller"
 date: "2023-10-26"
 output: html_document
 ---
+#would like to make each research questions a new tab with headers explaining analysis in each.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Chapter 2: Habitat 
+# Chapter 2: Juvenile Redtail Parrotfish Habitat 
 
 ## Research quesetion 1:
-### Is there a difference in Redtail Parrotfish Density Between Habitat Types
+### Is there a difference in Redtail Parrotfish Density Between Habitat Types and Size Classes
 
 Kruskall-Wallis Test
-```{r}
-abundance_df$totalabun <- rowSums( abundance_df[,2:9] )
+```{r Abundance~Habitat}
+library(tidyverse)
+library(readxl)
+abundance_dfnewimport <- read_excel("Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
+abundance_df <- abundance_dfnewimport
+abundance_df %>%
+  mutate(totalabun = rowSums(.[2:9]))
+
 density_df <- abundance_df %>%
   mutate(density = (totalabun*2)) %>%
   mutate(MajorHabitat = ifelse(MajorHabitat == "Seagrass", "Seagrass Fringe", MajorHabitat))
 
+density_df
 kruskal.test(density ~ MajorHabitat, data = density_df)
-dunn.test(density_df$density, g = density_df$MajorHabitat, method = "bonferroni")
 pairwise <- pairwise.wilcox.test(density_df$density, density_df$MajorHabitat,
                      p.adjust.method = "BH")
 pairwise
@@ -38,7 +45,7 @@ fig1
 
 
 Chi-Square Test
-```{r}
+```{r Chi-Square Test}
 #0-3
 habitat <- c("Hardbottom", "Rocky Reef", "Seagrass")
 size_class <- c("0-3")
@@ -108,7 +115,7 @@ size21_30
 ```
 
 ###Preliminary Roving Fish Survey Graph
-```{r}
+```{r Prelim Fish Suvey Graph}
 #Prelim Analysis
 melt_prelim <- melt(prelim_overall, id = c("Habitat"))
 
@@ -117,15 +124,9 @@ prelim_fig <- ggplot(melt_prelim, aes(x=Habitat, y= value, fill = variable))  +
            width = (0.75)) +
   labs(y=bquote("Abundance"),
        fill = "Size Class (cm)") +
-  xlab("Habitat Type")
-prelim_fig
-prelim_fig <- ggplot(melt_prelim, aes(x=Habitat, y= value, fill = variable))  +
-  geom_col(position = position_dodge(),
-           width = (0.75)) +
-  labs(y=bquote("Abundance"),
-       fill = "Size Class (cm)") +
   xlab("Habitat Type") +
   scale_fill_brewer(palette = "Dark2")
+
 prelim_fig
 ```
 
@@ -133,7 +134,7 @@ prelim_fig
 #Research Question 2: 
 ### How does benthic substrate percent cover affect the density of Redtail Parrotfish? 
 Negative Binomial Regression
-```{r}
+```{r NBR: Substrate}
 
 poisson_benthic <- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = "poisson", data = glm_df)
 summary(poisson_benthic)
@@ -184,7 +185,7 @@ ggplot() +
 
 ### How does benthic substrate percent cover affect the density of Redtail Parrotfish within each habitat type? 
 Negative Binomial Regression
-```{r}
+```{r NBR: Substrate x Habitat Type}
 #SEAGRASS FRINGE
 
 df_sg = glm_df %>%
@@ -219,7 +220,7 @@ summary(m_hb)
 ```
 
 ### How do complexity and depth affect the density of Redtail Parrotfish?
-```{r}
+```{r NBR: ComplexityxDepth}
 noout <- subset(nbr_complexdepth,Complexity < 100)
 modelpois <- glm(Density ~ Complexity + AvgDepth, family = "poisson", data = noout)
 summary(modelpois)
@@ -270,9 +271,9 @@ ggplot() +
 
 ```
 
-### How do complexity and depth affect the density of Redtail Parrotfish within each size class?
+### How do complexity affect the density of Redtail Parrotfish within each size class?
 
-```{r}
+```{r NBR: Complexity ~ Size Class}
 m1_poisson <- glm(size1 ~ Complexity, family = "poisson", data = noout)
 m1 <- glm.nb(size1 ~ Complexity , data = noout)
 s1 <- summary(m1)
@@ -345,7 +346,7 @@ dispersiontest(m7_poisson)
 ```
 
 ###Is there a difference in complexity between habitat types?
-```{r}
+```{r Complexity ~ Habitat type}
 complex_sum  <- ddply(nbr_complexdepth, ~MajorHabitat, summarise,
                       mean = mean(Complexity), 
                       sd = sd(Complexity), 
@@ -378,7 +379,7 @@ nbr_complexdepth$MajorHabitat[nbr_complexdepth$MajorHabitat == "Seagrass"] <- "S
 
 
 ###Benthic Biological Substrate Proportion
-```{r}
+```{r Percent Cover Substrate}
 benthic <- benthicdf %>%
   subset(select = c(Habitat, CORAL, SPONGE, TURF, Nonliving, SEAGRASS, allother, MacaUNSP, DICT)) %>%
   rename("Coral" = "CORAL",
@@ -412,7 +413,7 @@ benthic$variable <- factor(benthic$variable, levels=level_order_var)
 #Research Question 3: 
 ###Are there trends in habitat shifts?
 
-```{r}
+```{r Ontogenetic Habitat Shifts}
 #NCMRP DATASET
 stjstt = getRvcData(years = 2017:2021, regions = c("STTSTJ"))
 spcs = c("SPA CHRY")
@@ -523,7 +524,7 @@ combined
 
 ### Research Question Extras
 Kruskal Wallis on Depth: ###Is there a difference in depth between habitat types?
-```{r}
+```{r Depth x Habitat Type}
 depth <- nbr_complexdepth 
 
 

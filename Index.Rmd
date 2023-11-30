@@ -1,0 +1,57 @@
+---
+title: "Final Project- Data Management"
+author: "Sierrah Mueller"
+date: "2023-11-30"
+output: html_document
+---
+
+```{r setup libraries, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(DHARMa)
+library(MASS)
+library(pscl)
+library(AER)
+library(tidyverse)
+library(readxl)
+```
+
+# Chapter 2 RMD: Juvenile Redtail Parrotfish Habitat 
+
+## Research Question 1
+### Is there a difference in Redtail Parrotfish Density Between Habitat Types and Size Classes
+
+```{r, include=FALSE, echo = FALSE}
+
+abundance_dfnewimport <- read_excel("Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
+abundance_df <- abundance_dfnewimport
+abundance_df %>%
+  mutate(totalabun = rowSums(.[2:9]))
+
+```
+
+
+## Research Question 2
+
+### How does benthic substrate percent cover affect the density of Redtail Parrotfish? 
+Negative Binomial Regression
+```{r NBR: Substrate, echo= FALSE, message = FALSE}
+glm_df <- read_excel("Data/glm_df.xlsx")
+
+poisson_benthic <- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = "poisson", data = glm_df)
+summary(poisson_benthic)
+dispersiontest(poisson_benthic)
+m_benthic <- glm.nb(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE , data = glm_df)
+summary(m_benthic)
+odTest(m_benthic)
+```
+
+### How do complexity and depth affect the density of Redtail Parrotfish?
+```{r NBR, echo= FALSE, message = FALSE}
+nbr_complexdepth <- read_excel("Data/nbr_complexdepth.xlsx")
+noout <- subset(nbr_complexdepth,Complexity < 100)
+
+
+
+```
+
