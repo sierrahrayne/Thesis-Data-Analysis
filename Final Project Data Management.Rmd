@@ -1,0 +1,43 @@
+---
+title: "Final Project- Data Management"
+author: "Sierrah Mueller"
+date: "2023-11-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Chapter 2 RMD: Juvenile Redtail Parrotfish Habitat 
+
+## Research Question 1:
+### Is there a difference in Redtail Parrotfish Density Between Habitat Types and Size Classes
+
+```{r, include=FALSE}
+library(tidyverse)
+library(readxl)
+abundance_dfnewimport <- read_excel("Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
+abundance_df <- abundance_dfnewimport
+abundance_df %>%
+  mutate(totalabun = rowSums(.[2:9]))
+
+```
+
+
+#Research Question 2: 
+### How does benthic substrate percent cover affect the density of Redtail Parrotfish? 
+Negative Binomial Regression
+```{r NBR: Substrate}
+library(readxl)
+library(DHARMa)
+library(MASS)
+library(pscl)
+library(AER)
+glm_df <- read_excel("Data/glm_df.xlsx")
+poisson_benthic <- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = "poisson", data = glm_df)
+summary(poisson_benthic)
+dispersiontest(poisson_benthic)
+
+
