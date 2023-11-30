@@ -360,52 +360,18 @@ display: none;
 <div id="chapter-2-rmd-juvenile-redtail-parrotfish-habitat" class="section level1">
 <h1>Chapter 2 RMD: Juvenile Redtail Parrotfish Habitat</h1>
 <div id="research-question-1" class="section level2">
-<h2>Research Question 1:</h2>
+<h2>Research Question 1</h2>
 <div id="is-there-a-difference-in-redtail-parrotfish-density-between-habitat-types-and-size-classes" class="section level3">
 <h3>Is there a difference in Redtail Parrotfish Density Between Habitat
 Types and Size Classes</h3>
-<p>#Research Question 2: ### How does benthic substrate percent cover
-affect the density of Redtail Parrotfish? Negative Binomial
-Regression</p>
-<pre class="r"><code>library(readxl)
-library(DHARMa)</code></pre>
-<pre><code>## This is DHARMa 0.4.6. For overview type &#39;?DHARMa&#39;. For recent changes, type news(package = &#39;DHARMa&#39;)</code></pre>
-<pre class="r"><code>library(MASS)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;MASS&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     select</code></pre>
-<pre class="r"><code>library(pscl)</code></pre>
-<pre><code>## Classes and Methods for R developed in the
-## Political Science Computational Laboratory
-## Department of Political Science
-## Stanford University
-## Simon Jackman
-## hurdle and zeroinfl functions by Achim Zeileis</code></pre>
-<pre class="r"><code>library(AER)</code></pre>
-<pre><code>## Loading required package: car</code></pre>
-<pre><code>## Loading required package: carData</code></pre>
-<pre><code>## 
-## Attaching package: &#39;car&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     recode</code></pre>
-<pre><code>## The following object is masked from &#39;package:purrr&#39;:
-## 
-##     some</code></pre>
-<pre><code>## Loading required package: lmtest</code></pre>
-<pre><code>## Loading required package: zoo</code></pre>
-<pre><code>## 
-## Attaching package: &#39;zoo&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     as.Date, as.Date.numeric</code></pre>
-<pre><code>## Loading required package: sandwich</code></pre>
-<pre><code>## Loading required package: survival</code></pre>
-<pre class="r"><code>glm_df &lt;- read_excel(&quot;Data/glm_df.xlsx&quot;)
-poisson_benthic &lt;- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = &quot;poisson&quot;, data = glm_df)
-summary(poisson_benthic)</code></pre>
+</div>
+</div>
+<div id="research-question-2" class="section level2">
+<h2>Research Question 2</h2>
+<div id="how-does-benthic-substrate-percent-cover-affect-the-density-of-redtail-parrotfish" class="section level3">
+<h3>How does benthic substrate percent cover affect the density of
+Redtail Parrotfish?</h3>
+<p>Negative Binomial Regression</p>
 <pre><code>## 
 ## Call:
 ## glm(formula = Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + 
@@ -431,7 +397,6 @@ summary(poisson_benthic)</code></pre>
 ## AIC: 1955.7
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
-<pre class="r"><code>dispersiontest(poisson_benthic)</code></pre>
 <pre><code>## 
 ##  Overdispersion test
 ## 
@@ -441,6 +406,48 @@ summary(poisson_benthic)</code></pre>
 ## sample estimates:
 ## dispersion 
 ##   3.352106</code></pre>
+<pre><code>## 
+## Call:
+## glm.nb(formula = Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + 
+##     CORAL + SPONGE, data = glm_df, init.theta = 2.115124016, 
+##     link = log)
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept) 1.309e+00  2.554e-01   5.123 3.01e-07 ***
+## MacaUNSP    1.143e-02  7.689e-03   1.487  0.13703    
+## Dictyota    1.579e-02  5.107e-03   3.091  0.00199 ** 
+## TURF        8.963e-05  3.841e-03   0.023  0.98138    
+## SEAGRASS    4.993e-04  3.436e-03   0.145  0.88448    
+## CORAL       1.156e-02  2.160e-02   0.535  0.59254    
+## SPONGE      3.727e-02  2.144e-02   1.739  0.08212 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for Negative Binomial(2.1151) family taken to be 1)
+## 
+##     Null deviance: 381.89  on 296  degrees of freedom
+## Residual deviance: 351.36  on 290  degrees of freedom
+##   (3 observations deleted due to missingness)
+## AIC: 1649.6
+## 
+## Number of Fisher Scoring iterations: 1
+## 
+## 
+##               Theta:  2.115 
+##           Std. Err.:  0.264 
+## 
+##  2 x log-likelihood:  -1633.634</code></pre>
+<pre><code>## Likelihood ratio test of H0: Poisson, as restricted NB model:
+## n.b., the distribution of the test-statistic under H0 is non-standard
+## e.g., see help(odTest) for details/references
+## 
+## Critical value of test statistic at the alpha= 0.05 level: 2.7055 
+## Chi-Square Test Statistic =  308.0922 p-value = &lt; 2.2e-16</code></pre>
+</div>
+<div id="how-do-complexity-and-depth-affect-the-density-of-redtail-parrotfish" class="section level3">
+<h3>How do complexity and depth affect the density of Redtail
+Parrotfish?</h3>
 </div>
 </div>
 </div>
