@@ -1,7 +1,6 @@
 ---
-title: "index"
-author: "Sierrah Mueller"
-date: "2023-11-30"
+title: "Data Management Final Project"
+author: "By: Sierrah Mueller"
 output: html_document
 ---
 
@@ -14,28 +13,47 @@ library(pscl)
 library(AER)
 library(tidyverse)
 library(readxl)
+library(sjPlot)
+library(ggeffects)
+library(reshape2)
+library(plyr)
 ```
 
-# Chapter 2 RMD: Juvenile Redtail Parrotfish Habitat 
+This document was created as a final project for Data Management/GIS. It highlights some of the statistical analyses conducted for Chapter 2 of my thesis titled: Filling Life History Gaps in a Data-Deficient Species, redtail parrotfish, _Sparisoma chrysopterum_, in St. Thomas, US Virgin Islands. Analysis broken down by research questions: 
 
-## Research Question 1
-### Is there a difference in Redtail Parrotfish Density Between Habitat Types and Size Classes
+ * __Research Question 1__ : Is there a difference in juvenile redtail parrotfish density between habitat types?
+ * __Research Question 2__: How does the percent cover of benthic substrates across all habitat types affect the density of redtail parrotfish? 
+ * __Research Question 3__: How do complexity and depth affect the density of redtail parrotfish and vary across habitat types surveyed?
 
+
+*** 
+
+## Research Question 1 {.tabset}
+##### Is there a difference in juvenile redtail parrotfish density between habitat types?
+
+### Data
 ```{r, echo = FALSE}
-
 abundance_dfnewimport <- read_excel("../Data/CombinedData_Abundance-Habitat.xlsx", sheet = "OverallHabitatANOVA")
 abundance_df <- abundance_dfnewimport %>%
   mutate(totalabun = rowSums(.[2:9]))
 density_df <- abundance_df %>%
   mutate(density = totalabun*2) %>%
   mutate(MajorHabitat = ifelse(MajorHabitat == "Seagrass", "Seagrass Fringe", MajorHabitat))
-# density_df
-density_df
-kruskal.test(density ~ MajorHabitat, data = density_df)
-pairwise <- pairwise.wilcox.test(density_df$density, density_df$MajorHabitat,
-                     p.adjust.method = "BH")
-pairwise
+head(density_df)
+```
 
+### Results
+Kruskal Wallis test conducted to examine relationship between redtail parrotfish density by habitat type surveyed: hardbottom, rocky reef, and seagrass fringe. Kruskal Wallis test followed by a pairwise wilcox test for post-hoc analysis
+```{r}
+
+kruskal.test(density ~ MajorHabitat, data = density_df)
+pairwise.wilcox.test(density_df$density, density_df$MajorHabitat,
+                     p.adjust.method = "BH")
+
+```
+
+### Plot
+```{r, echo= FALSE}
 fig1 <- ggplot(density_df, aes(x = MajorHabitat, y = density)) +
   geom_boxplot(outlier.colour = "grey", outlier.shape = 16, outlier.size = 1) +
   geom_jitter(width = 0.3, size = 1, alpha = 0.2) +
@@ -45,27 +63,124 @@ fig1 <- ggplot(density_df, aes(x = MajorHabitat, y = density)) +
 fig1
 ```
 
+Figure: Redtail parrotfish density (N per 100 m2) across hardbottom, rocky reef, and seagrass fringe habitats. 
 
-## Research Question 2
+*** 
 
-### How does benthic substrate percent cover affect the density of Redtail Parrotfish? 
-Negative Binomial Regression
-```{r NBR: Substrate, echo= FALSE, message = FALSE}
+## Research Question 2 {.tabset}
+##### How does the percent cover of benthic substrates across all habitat types affect the density of redtail parrotfish? 
+
+### Data
+```{r, echo = FALSE }
 glm_df <- read_excel("../Data/glm_df.xlsx")
+head(glm_df)
+```
 
-poisson_benthic <- glm(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE, family = "poisson", data = glm_df)
-summary(poisson_benthic)
-dispersiontest(poisson_benthic)
+### Results
+Negative Binomial Regression (NBR) followed by likelihood ratio test to ensure NBR is a better fit than Poisson Model
+```{r}
 m_benthic <- glm.nb(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE , data = glm_df)
 summary(m_benthic)
 odTest(m_benthic)
 ```
 
-### How do complexity and depth affect the density of Redtail Parrotfish?
-```{r NBR, echo= FALSE, message = FALSE}
+
+### Plot
+
+```{r, echo= FALSE, message = FALSE, warning=FALSE}
+#get confidence interval for complexity
+CI_ben <- ggpredict(m_benthic, interval = "confidence", type = "fixed",
+                 terms = "Dictyota")
+CI_ben <- CI_ben %>% as.data.frame()
+
+ggplot() +
+  geom_point(data = glm_df, aes(x = Dictyota,
+                               y = Abundance,
+                              ),
+             alpha = 0.2) +
+  geom_path(data = CI_ben, aes(x = x, y = predicted)) +
+  geom_ribbon(data = CI_ben, aes(x = x, ymin = conf.low,
+                                  ymax = conf.high),
+              alpha = 0.5) + 
+  xlab("Percent Cover Dictyota spp.") +
+  ylab("Predicted Abundance") +
+  ggtitle("Relationship Between Percent Cover Dictyota & Juvenile Redtail Parrotfish Density")
+```
+
+Figure: Negative Binomial regression of the predicted density of redtail parrotfish in the presence of biological substrate Dictyota spp across all habitat types. 
+
+
+***
+
+## Research Question 3 {.tabset}
+##### How do complexity and depth affect the density of redtail parrotfish and vary across habitat types surveyed?
+```{r, include=FALSE}
 nbr_complexdepth <- read_excel("../Data/nbr_complexdepth.xlsx")
 noout <- subset(nbr_complexdepth,Complexity < 100)
+complex_sum  <- ddply(nbr_complexdepth, ~MajorHabitat, summarise,
+                      mean = mean(Complexity), 
+                      sd = sd(Complexity), 
+                      n = length(Complexity), 
+                      SEM = sd(Complexity)/sqrt
+                      (length(Complexity)))
+```
 
+### Data
+```{r, echo = FALSE }
+nbr_complexdepth <- read_excel("../Data/nbr_complexdepth.xlsx")
+head(nbr_complexdepth)
+```
 
+### Results
+#### __Part 1: Negative Binomial Regression (NBR)__
+Examine the relationship between habitat characteristics complexity and depth on juvenile redtail parrotfish density
+```{r NBR: ComplexityxDepth}
+m_depthcomplex <- glm.nb(Density ~ Complexity + AvgDepth, data = noout)
+summary(m_depthcomplex)
+odTest(m_depthcomplex)
 
 ```
+
+#### __Part 2: Kruskal Wallis Test__
+Examine differences in topographic complexity between habitat types followed by post hoc analysis using pairwise wilcox test 
+```{r}
+kruskal.test(Complexity ~ MajorHabitat, data = nbr_complexdepth)
+pairwise.wilcox.test(nbr_complexdepth$Complexity, nbr_complexdepth$MajorHabitat, 
+                     p.adjust.method = "BH")
+
+```
+
+
+### Plots
+```{r, echo= FALSE, message = FALSE, warning=FALSE}
+CI_comp <- ggpredict(m_depthcomplex, interval = "confidence", type = "fixed",
+                 terms = "Complexity")
+CI_comp <- CI_comp %>% as.data.frame()
+
+ggplot() +
+  geom_point(data = noout, aes(x = Complexity,
+                               y = Density,
+                              ),
+             alpha = 0.2) +
+  geom_path(data = CI_comp, aes(x = x, y = predicted)) +
+  geom_ribbon(data = CI_comp, aes(x = x, ymin = conf.low,
+                                  ymax = conf.high),
+              alpha = 0.5) +
+  xlab("Topographic Complexity (cm)") +
+  ylab("Predicted Abundance") +
+  ggtitle("Relationship Between Topographic Complexity & Juvenile Redtail Parrotfish Density")
+```
+
+
+```{r, echo= FALSE}
+fig_complex <- ggplot(nbr_complexdepth, aes(x = MajorHabitat, y = Complexity)) +
+  geom_boxplot(outlier.colour = "grey", outlier.shape = 16, outlier.size = 1) +
+  geom_jitter(width = 0.3, size = 1, alpha = 0.2) +
+  labs(y=bquote("Topographic Complexity (cm)")) +
+  xlab("Habitat Type") +
+  theme(axis.text.x=element_text(size=9)) +
+  ggtitle("Topographic Complexity Across Habitat Types")
+
+fig_complex
+```
+
