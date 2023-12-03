@@ -43,7 +43,8 @@ head(density_df)
 ```
 
 ### Results
-Kruskal Wallis test conducted to examine relationship between redtail parrotfish density by habitat type surveyed: hardbottom, rocky reef, and seagrass fringe. Kruskal Wallis test followed by a pairwise wilcox test for post-hoc analysis
+#### __Kruskal Wallis Test__ 
+Kruskal Wallis test conducted to examine relationship between redtail parrotfish density by habitat type surveyed: hardbottom, rocky reef, and seagrass fringe. Kruskal Wallis test followed by a pairwise wilcox test for post-hoc analysis.
 ```{r}
 
 kruskal.test(density ~ MajorHabitat, data = density_df)
@@ -77,7 +78,8 @@ head(glm_df)
 ```
 
 ### Results
-Negative Binomial Regression (NBR) followed by likelihood ratio test to ensure NBR is a better fit than Poisson Model
+#### __Negative Binomial Regression (NBR)__
+NBR to examine the relationship between the benthic substrate variables: Macroalgae unspecified, Dictyota, Turf, Coral, Seagrass, and Sponge on the juvenile redtail parrotfish density. NBR followed by a goodness of fit test to ensure NBR regression model fitted better than Poisson model. 
 ```{r}
 m_benthic <- glm.nb(Abundance ~ MacaUNSP + Dictyota + TURF + SEAGRASS + CORAL + SPONGE , data = glm_df)
 summary(m_benthic)
